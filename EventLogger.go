@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"strconv"
 )
 
 func exit(err error) {
@@ -50,8 +51,6 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	fmt.Printf("url=%s insecure=%s\n", *vcUrl, *insecure)
 
 	url, err := url.Parse(*vcUrl)
 	if err != nil {
@@ -97,7 +96,9 @@ func main() {
 			category, _ := eventManager.EventCategory(ctx, e)
 			event := e.GetEvent()
 			msg := strings.TrimSpace(event.FullFormattedMessage)
-			m := make(map[string]interface{})
+			m := make(map[string]string)
+			t := event.CreatedTime
+			m["time"] = strconv.FormatInt(t.Unix(), 10)
 			m["type"] = "Event"
 			if t, ok := e.(*types.TaskEvent); ok {
 				m["type"] = "Task"
@@ -115,10 +116,8 @@ func main() {
 			if event.UserName != "" {
 				m["username"] = event.UserName
 			}
-			t := event.CreatedTime
-			m["time"] = t.Unix()
 			s, _ := json.Marshal(m)
-			fmt.Printf("%s\t%s\n", t.Local().Format(time.RFC3339), string(s))
+			fmt.Printf("%s\n", string(s))
 		}
 		time.Sleep(10 * 1000 * 1000 * 1000)
 
